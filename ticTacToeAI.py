@@ -1,6 +1,17 @@
 import random
 import time
 
+# Adjust AI difficulty here:
+# SEARCH_DEPTH = 2  (Fast, basic strategy)
+# SEARCH_DEPTH = 3  (Balanced - good for most games)
+# SEARCH_DEPTH = 4  (Strong, slower)
+# SEARCH_DEPTH = 5+ (Very strong, much slower)
+
+SEARCH_DEPTH = 3  # <-- Change this value to adjust AI strength
+
+# Show computer's thinking process? (True/False)
+SHOW_THINKING = False  # <-- Set to False for cleaner output
+
 gameWon = False
 
 
@@ -69,44 +80,287 @@ class Board:
                 for j in range(3):
                     if self.layout[i][j] != " ":
                         count = count + 1
-                        if count == 9:
-                            self.complete = True
-                            self.winner = "TIE"
-                            for x in range(3):
-                                for y in range(3):
-                                    self.layout[x][y] = self.winner
-                        return
-                    
-def checkFullWin(gameWon):
-    #checks rows
+            if count == 9:
+                self.complete = True
+                self.winner = "TIE"
+                for x in range(3):
+                    for y in range(3):
+                        self.layout[x][y] = self.winner
+
+
+def copyGameState(fullBoardDict):
+    """Create a deep copy of all boards"""
+    newDict = {}
+    for key, board in fullBoardDict.items():
+        newLayout = [row[:] for row in board.layout]
+        newDict[key] = Board(board.complete, board.winner, newLayout)
+    return newDict
+
+
+def checkGameWinner(boardDict):
+    """Check if someone won the entire game"""
+    # Check rows
     for i in range(3):
-            if fullBoardDict[i+1].winner == fullBoardDict[i+1].winner == fullBoardDict[i+1].winner != " " and fullBoardDict[i+1].winner != "TIE":
-                gameWon = True
-                print(f"{fullBoardDict[i+1].winner} wins the game!")
-                return gameWon
+        if (boardDict[i*3+1].winner == boardDict[i*3+2].winner == boardDict[i*3+3].winner != " " 
+            and boardDict[i*3+1].winner != "TIE"):
+            return boardDict[i*3+1].winner
     
-    #checks columns
+    # Check columns
     for j in range(3):
-        if fullBoardDict[j+1].winner == fullBoardDict[j+4].winner == fullBoardDict[j+7].winner != " " and fullBoardDict[j+1].winner != "TIE":
+        if (boardDict[j+1].winner == boardDict[j+4].winner == boardDict[j+7].winner != " " 
+            and boardDict[j+1].winner != "TIE"):
+            return boardDict[j+1].winner
+    
+    # Check diagonals
+    if (boardDict[1].winner == boardDict[5].winner == boardDict[9].winner != " " 
+        and boardDict[1].winner != "TIE"):
+        return boardDict[1].winner
+    
+    if (boardDict[3].winner == boardDict[5].winner == boardDict[7].winner != " " 
+        and boardDict[3].winner != "TIE"):
+        return boardDict[3].winner
+    
+    # Check for full game tie
+    if all(boardDict[i].complete for i in range(1, 10)):
+        return "TIE"
+    
+    return None
+
+
+def evaluateGameState(boardDict, computerToken, playerToken):
+    """
+    Simple evaluation: count board wins
+    Computer boards = positive, Player boards = negative
+    """
+    score = 0
+    
+    # Check if game is won
+    winner = checkGameWinner(boardDict)
+    if winner == computerToken:
+        return 1000  # Computer wins!
+    elif winner == playerToken:
+        return -1000  # Player wins!
+    elif winner == "TIE":
+        return 0
+    
+    # Count board wins
+    for boardNum in range(1, 10):
+        if boardDict[boardNum].winner == computerToken:
+            score += 10
+        elif boardDict[boardNum].winner == playerToken:
+            score -= 10
+        elif boardDict[boardNum].winner == "TIE":
+            score += 0
+    
+    # Bonus for center board
+    if boardDict[5].winner == computerToken:
+        score += 3
+    elif boardDict[5].winner == playerToken:
+        score -= 3
+    
+    # Bonus for corners
+    for corner in [1, 3, 7, 9]:
+        if boardDict[corner].winner == computerToken:
+            score += 2
+        elif boardDict[corner].winner == playerToken:
+            score -= 2
+    
+    return score
+
+
+def getValidMoves(boardDict, currentBoardNum):
+    """Get all valid moves from current position"""
+    moves = []
+    
+    # If current board is complete, can play anywhere
+    if currentBoardNum is None or boardDict[currentBoardNum].complete:
+        for boardNum in range(1, 10):
+            if not boardDict[boardNum].complete:
+                board = boardDict[boardNum]
+                for row in range(3):
+                    for col in range(3):
+                        if board.layout[row][col] == " ":
+                            moves.append((boardNum, row, col))
+    else:
+        # Must play on current board
+        board = boardDict[currentBoardNum]
+        for row in range(3):
+            for col in range(3):
+                if board.layout[row][col] == " ":
+                    moves.append((currentBoardNum, row, col))
+    
+    return moves
+
+
+def applyMove(boardDict, boardNum, row, col, token):
+    """Apply a move to the board state and return next board number"""
+    boardDict[boardNum].layout[row][col] = token
+    boardDict[boardNum].checkWin()
+    nextBoardNum = row * 3 + col + 1
+    return nextBoardNum
+
+
+# Global variables for thought tree printing
+thoughtTreeLines = []
+nodesEvaluated = 0
+
+
+def minimax(boardDict, currentBoardNum, depth, maxDepth, isMaximizing, 
+            computerToken, playerToken, indent="", moveDescription=""):
+    """
+    Minimax algorithm that evaluates entire game state
+    Returns: (score, best_move)
+    """
+    global thoughtTreeLines, nodesEvaluated
+    nodesEvaluated += 1
+    
+    # Print thought process (only if showing thinking and at shallow depth)
+    if SHOW_THINKING and depth <= 2:
+        thoughtTreeLines.append(f"{indent}{moveDescription}")
+    
+    # Check if game is over
+    winner = checkGameWinner(boardDict)
+    if winner is not None:
+        score = evaluateGameState(boardDict, computerToken, playerToken)
+        if SHOW_THINKING and depth <= 2:
+            thoughtTreeLines.append(f"{indent}  → Game Over! Winner: {winner}, Score: {score}")
+        return score, None
+    
+    # Check depth limit
+    if depth >= maxDepth:
+        score = evaluateGameState(boardDict, computerToken, playerToken)
+        if SHOW_THINKING and depth <= 2:
+            thoughtTreeLines.append(f"{indent}  → Depth limit. Score: {score}")
+        return score, None
+    
+    # Get all valid moves
+    validMoves = getValidMoves(boardDict, currentBoardNum)
+    
+    if not validMoves:
+        score = evaluateGameState(boardDict, computerToken, playerToken)
+        return score, None
+    
+    bestMove = None
+    
+    if isMaximizing:  # Computer's turn
+        maxScore = -float('inf')
+        
+        for move in validMoves:
+            boardNum, row, col = move
+            
+            # Make move on a copy
+            newBoardDict = copyGameState(boardDict)
+            nextBoardNum = applyMove(newBoardDict, boardNum, row, col, computerToken)
+            
+            # Describe move
+            tileNum = row * 3 + col + 1
+            moveDesc = f"[D{depth}] Computer: Board {boardNum}, Tile {tileNum} → "
+            
+            # Recursive call
+            score, _ = minimax(newBoardDict, nextBoardNum, depth + 1, maxDepth, 
+                              False, computerToken, playerToken, 
+                              indent + "  ", moveDesc)
+            
+            if score > maxScore:
+                maxScore = score
+                bestMove = move
+        
+        return maxScore, bestMove
+    
+    else:  # Player's turn
+        minScore = float('inf')
+        
+        for move in validMoves:
+            boardNum, row, col = move
+            
+            # Make move on a copy
+            newBoardDict = copyGameState(boardDict)
+            nextBoardNum = applyMove(newBoardDict, boardNum, row, col, playerToken)
+            
+            # Describe move
+            tileNum = row * 3 + col + 1
+            moveDesc = f"[D{depth}] Player: Board {boardNum}, Tile {tileNum} → "
+            
+            # Recursive call
+            score, _ = minimax(newBoardDict, nextBoardNum, depth + 1, maxDepth, 
+                              True, computerToken, playerToken, 
+                              indent + "  ", moveDesc)
+            
+            if score < minScore:
+                minScore = score
+                bestMove = move
+        
+        return minScore, bestMove
+
+
+def findBestMove(fullBoardDict, currentBoardNum, computerToken, playerToken):
+    """Find the best move using minimax"""
+    global thoughtTreeLines, nodesEvaluated
+    
+    if SHOW_THINKING:
+        print(f"Computer thinking (depth {SEARCH_DEPTH})...", end='', flush=True)
+    
+    thoughtTreeLines = []
+    nodesEvaluated = 0
+    startTime = time.time()
+    
+    score, bestMove = minimax(fullBoardDict, currentBoardNum, 0, SEARCH_DEPTH, 
+                              True, computerToken, playerToken, "", "ROOT: ")
+    
+    elapsedTime = time.time() - startTime
+    
+    if SHOW_THINKING:
+        print(f" done! ({elapsedTime:.2f}s)")
+        
+        # Print thought tree for smaller depths
+        if SEARCH_DEPTH <= 3:
+            print("\nThought process (first 2 levels):")
+            for line in thoughtTreeLines[:30]:
+                print(line)
+            if len(thoughtTreeLines) > 30:
+                print(f"... ({len(thoughtTreeLines) - 30} more)")
+            print()
+        
+        print(f"Evaluated {nodesEvaluated} positions, Score: {score}")
+    
+    return bestMove
+
+
+def checkFullWin(gameWon):
+    """Check if the game is won"""
+    # Check rows
+    for i in range(3):
+        if (fullBoardDict[i*3+1].winner == fullBoardDict[i*3+2].winner == fullBoardDict[i*3+3].winner != " " 
+            and fullBoardDict[i*3+1].winner != "TIE"):
+            gameWon = True
+            print(f"{fullBoardDict[i*3+1].winner} wins the game!")
+            return gameWon
+    
+    # Check columns
+    for j in range(3):
+        if (fullBoardDict[j+1].winner == fullBoardDict[j+4].winner == fullBoardDict[j+7].winner != " " 
+            and fullBoardDict[j+1].winner != "TIE"):
             gameWon = True
             print(f"{fullBoardDict[j+1].winner} wins the game!")
             return gameWon
     
-    #checks diagonals
-    if fullBoardDict[1].winner == fullBoardDict[5].winner == fullBoardDict[9].winner != " " and fullBoardDict[1].winner != "TIE":
+    # Check diagonals
+    if (fullBoardDict[1].winner == fullBoardDict[5].winner == fullBoardDict[9].winner != " " 
+        and fullBoardDict[1].winner != "TIE"):
         gameWon = True
         print(f"{fullBoardDict[1].winner} wins the game!")
         return gameWon
     
-    if fullBoardDict[3].winner == fullBoardDict[5].winner == fullBoardDict[7].winner != " " and fullBoardDict[3].winner != "TIE":
+    if (fullBoardDict[3].winner == fullBoardDict[5].winner == fullBoardDict[7].winner != " " 
+        and fullBoardDict[3].winner != "TIE"):
         gameWon = True
         print(f"{fullBoardDict[3].winner} wins the game!")
         return gameWon
-                
+    
+    return False
 
 
-
-
+# ==================== BOARD SETUP ====================
 
 boardTL = Board(False, " ", [[" ", " ", " "], [" ", " ", " "], [" ", " ", " "]])
 boardTM = Board(False, " ", [[" ", " ", " "], [" ", " ", " "], [" ", " ", " "]])
@@ -128,8 +382,7 @@ fullBoardDict = {
     7 : boardBL,
     8 : boardBM,
     9 : boardBR
-    }
-
+}
 
 
 def printFullBoards():
@@ -149,15 +402,12 @@ def printFullBoards():
                 + " # "
                 + section[2][rowIndex]
             )
-            # Add separator lines within each grid (between rows)
             if rowIndex < 2:
                 print("---------" + " # " + "---------" + " # " + "---------")
         
-        # Only print hashtag separator between sections, not after the last one
         if sectionIndex < 2:
             print("# # # # # # # # # # # # # # # # #")
     print("\n\n")
-    
 
 
 def setup():
@@ -178,7 +428,6 @@ def setup():
         return playerToken, computerToken, False
 
 
-    
 def setupOutput(playerToken, computerToken, firstMove):
     print(f"You are playing as: {playerToken}")
     print(f"Computer is playing as: {computerToken}")
@@ -201,99 +450,150 @@ def setupOutput(playerToken, computerToken, firstMove):
     print("\n\n")
 
 
-
-def makeFirstMove(currentPlayer):
+def makeFirstMove(currentPlayer, playerToken, computerToken):
+    """Handle first move when any board can be chosen"""
+    if currentPlayer == computerToken:
+        # Computer uses minimax
+        bestMove = findBestMove(fullBoardDict, None, computerToken, playerToken)
+        
+        if bestMove:
+            boardNum, row, col = bestMove
+            currentBoard = fullBoardDict[boardNum]
+            currentBoard.layout[row][col] = computerToken
+            currentBoard.checkWin()
+            
+            tileNum = row * 3 + col + 1
+            print(f"Computer chose board {boardNum}")
+            print(f"Computer placed {computerToken} at tile {tileNum}")
+            
+            nextBoardNum = row * 3 + col + 1
+            return fullBoardDict[nextBoardNum], nextBoardNum
+        else:
+            # Fallback to random
+            boardNum = random.randint(1, 9)
+            currentBoard = fullBoardDict[boardNum]
+            availableSpots = [(r, c) for r in range(3) for c in range(3) if currentBoard.layout[r][c] == " "]
+            row, col = random.choice(availableSpots)
+            currentBoard.layout[row][col] = computerToken
+            currentBoard.checkWin()
+            print(f"Computer chose board {boardNum}")
+            nextBoardNum = row * 3 + col + 1
+            return fullBoardDict[nextBoardNum], nextBoardNum
+    
+    # Player's turn
     fullBoard = int(input("What board would you like to place on? (1-9) >> "))
-    while fullBoard < 1 or fullBoard > 9 or len(str(fullBoard)) != 1:
+    while fullBoard < 1 or fullBoard > 9:
         fullBoard = int(input("Invalid! Enter between 1 and 9 >> "))
+    
     currentBoard = fullBoardDict[fullBoard]
     
     individualBoard = int(input("What tile would you like to place on? (1-9) >> "))
-    while individualBoard < 1 or individualBoard > 9 or len(str(individualBoard)) != 1:
+    while individualBoard < 1 or individualBoard > 9:
         individualBoard = int(input("Invalid! Enter between 1 and 9 >> "))
+    
     individualBoard = individualBoard - 1
     row = (individualBoard // 3)
-    columb = (individualBoard % 3)
-    currentBoard.layout[row][columb] = currentPlayer
+    col = (individualBoard % 3)
     
-    # Check if this move won the board
+    while currentBoard.layout[row][col] != " ":
+        print("That spot is taken!")
+        individualBoard = int(input("What tile would you like to place on? (1-9) >> "))
+        while individualBoard < 1 or individualBoard > 9:
+            individualBoard = int(input("Invalid! Enter between 1 and 9 >> "))
+        individualBoard = individualBoard - 1
+        row = individualBoard // 3
+        col = individualBoard % 3
+    
+    currentBoard.layout[row][col] = currentPlayer
     currentBoard.checkWin()
-
-    currentBoard = fullBoardDict[(row * 3) + (columb)+1]
     
-    return currentBoard
+    nextBoardNum = (row * 3) + (col) + 1
+    return fullBoardDict[nextBoardNum], nextBoardNum
 
 
+def makeMove(currentPlayer, currentBoardNum, playerToken, computerToken):
+    """Make a move on the specified board"""
+    currentBoard = fullBoardDict[currentBoardNum]
     
-def makeMove(currentPlayer, currentBoard):
-    if currentBoard.complete == True:
+    if currentBoard.complete:
         printFullBoards()
         return makeFirstMove(currentPlayer, playerToken, computerToken)
-    else:
-        if currentPlayer == computerToken:
-            # Use improved minimax
-            bestMove = findBestMoveUltimate(fullBoardDict, currentBoardNum, computerToken, playerToken, maxDepth=4)
+    
+    if currentPlayer == computerToken:
+        # Computer uses minimax
+        bestMove = findBestMove(fullBoardDict, currentBoardNum, computerToken, playerToken)
+        
+        if bestMove:
+            boardNum, row, col = bestMove
+            currentBoard = fullBoardDict[boardNum]
+            currentBoard.layout[row][col] = computerToken
+            currentBoard.checkWin()
             
-            if bestMove:
-                boardNum, row, col = bestMove
-                currentBoard = fullBoardDict[boardNum]
-                currentBoard.layout[row][col] = computerToken
-                individualBoard = row * 3 + col + 1
-                print(f"Computer placed {computerToken} at tile {individualBoard}")
-            else:
-                # Fallback if no move found
-                print("Error: No valid move found")
-                return currentBoard, currentBoardNum
+            tileNum = row * 3 + col + 1
+            print(f"Computer placed {computerToken} at tile {tileNum}")
+            
+            nextBoardNum = row * 3 + col + 1
+            return fullBoardDict[nextBoardNum], nextBoardNum
         else:
-            individualBoard = int(input("What tile would you like to place on? (1-9) >> "))
-            while individualBoard < 1 or individualBoard > 9:
-                individualBoard = int(input("Invalid! Enter between 1 and 9 >> "))
-            individualBoard = individualBoard - 1
-            row = (individualBoard // 3)
-            col = (individualBoard % 3)
-            while currentBoard.layout[row][col] != " ":
-                individualBoard = int(input("Invalid! Tile already in use >> "))
-                while individualBoard < 1 or individualBoard > 9:
-                    individualBoard = int(input("Invalid! Enter between 1 and 9 >> "))
-                individualBoard = individualBoard - 1
-                row = individualBoard // 3
-                col = individualBoard % 3
-            currentBoard.layout[row][col] = currentPlayer
+            print("Error: No valid move found")
+            return currentBoard, currentBoardNum
     
+    # Player's turn
+    individualBoard = int(input("What tile would you like to place on? (1-9) >> "))
+    while individualBoard < 1 or individualBoard > 9:
+        individualBoard = int(input("Invalid! Enter between 1 and 9 >> "))
+    
+    individualBoard = individualBoard - 1
+    row = (individualBoard // 3)
+    col = (individualBoard % 3)
+    
+    while currentBoard.layout[row][col] != " ":
+        individualBoard = int(input("Invalid! Tile already in use >> "))
+        while individualBoard < 1 or individualBoard > 9:
+            individualBoard = int(input("Invalid! Enter between 1 and 9 >> "))
+        individualBoard = individualBoard - 1
+        row = individualBoard // 3
+        col = individualBoard % 3
+    
+    currentBoard.layout[row][col] = currentPlayer
     currentBoard.checkWin()
-
-    currentBoard = fullBoardDict[(row * 3) + (columb)+1]
-
-    return currentBoard
     
-    
-#playerToken = "X"
-#computerToken = "O"
-#firstMove = True
+    nextBoardNum = (row * 3) + (col) + 1
+    return fullBoardDict[nextBoardNum], nextBoardNum
+
+
+# ==================== MAIN GAME ====================
 
 playerToken, computerToken, firstMove = setup()
 setupOutput(playerToken, computerToken, firstMove)
-if firstMove == True:
+
+if firstMove:
     currentPlayer = playerToken
 else:
     currentPlayer = computerToken
 
 printFullBoards()
-currentBoard = makeFirstMove(currentPlayer)
+currentBoard, currentBoardNum = makeFirstMove(currentPlayer, playerToken, computerToken)
 
-while not(gameWon):
+while not gameWon:
+    # Switch player
     if currentPlayer == playerToken:
         currentPlayer = computerToken
     else:
         currentPlayer = playerToken
+    
     printFullBoards()
-
+    
     # Find and print which board is active
-    print(f">>> PLAYING ON BOARD {currentBoardNum} <<<")
-
+    for num, board in fullBoardDict.items():
+        if board is fullBoardDict[currentBoardNum]:
+            print(f">>> PLAYING ON BOARD {num} <<<")
+            break
+    
     currentBoard, currentBoardNum = makeMove(currentPlayer, currentBoardNum, playerToken, computerToken)
     
-    if currentBoard.complete == True:
+    if currentBoard.complete:
         printFullBoards()
-        currentBoard = makeFirstMove(currentPlayer)
+        currentBoard, currentBoardNum = makeFirstMove(currentPlayer, playerToken, computerToken)
+    
     gameWon = checkFullWin(gameWon)
