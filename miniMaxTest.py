@@ -1,3 +1,5 @@
+import random
+
 board = [[" ", " ", " "], 
          [" ", " ", " "], 
          [" ", " ", " "]]
@@ -125,7 +127,7 @@ def playerMove():
 
 print("Tic-Tac-Toe: You are X, Computer is O")
 
-currentPlayer = "X"  # Player goes first
+currentPlayer = random.choice(["X", "O"])  # Player goes first
 
 while not(gameComplete):
     printBoard()
