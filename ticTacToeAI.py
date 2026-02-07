@@ -28,12 +28,16 @@ class Board:
         f"{self.layout[2][0]} | {self.layout[2][1]} | {self.layout[2][2]}",
         ]
 
+
+
     def printBoard(self):
         rows = self.getRows()
         for i in range(3):
             print(rows[i])
             if i < 2:
                 print("---------")
+
+
 
     def checkWin(self):
         # Check rows
@@ -89,16 +93,17 @@ class Board:
 
 
 def copyGameState(fullBoardDict):
-    """Create a deep copy of all boards"""
+    #creates a copy of all boards
     newDict = {}
-    for key, board in fullBoardDict.items():
+    for key in fullBoardDict:
+        board = fullBoardDict[key]
         newLayout = [row[:] for row in board.layout]
         newDict[key] = Board(board.complete, board.winner, newLayout)
     return newDict
 
 
 def checkGameWinner(boardDict):
-    """Check if someone won the entire game"""
+    #checks if the entire game has been won
     # Check rows
     for i in range(3):
         if (boardDict[i*3+1].winner == boardDict[i*3+2].winner == boardDict[i*3+3].winner != " " 
@@ -128,10 +133,8 @@ def checkGameWinner(boardDict):
 
 
 def evaluateGameState(boardDict, computerToken, playerToken):
-    """
-    Simple evaluation: count board wins
-    Computer boards = positive, Player boards = negative
-    """
+    #Computer boards = positive, Player boards = negative
+
     score = 0
     
     # Check if game is won
@@ -169,7 +172,7 @@ def evaluateGameState(boardDict, computerToken, playerToken):
 
 
 def getValidMoves(boardDict, currentBoardNum):
-    """Get all valid moves from current position"""
+    #Get all valid moves from current position
     moves = []
     
     # If current board is complete, can play anywhere
@@ -193,7 +196,7 @@ def getValidMoves(boardDict, currentBoardNum):
 
 
 def applyMove(boardDict, boardNum, row, col, token):
-    """Apply a move to the board state and return next board number"""
+    #Apply a move to the board state and return next board number
     boardDict[boardNum].layout[row][col] = token
     boardDict[boardNum].checkWin()
     nextBoardNum = row * 3 + col + 1
@@ -358,9 +361,6 @@ def checkFullWin(gameWon):
         return gameWon
     
     return False
-
-
-# ==================== BOARD SETUP ====================
 
 boardTL = Board(False, " ", [[" ", " ", " "], [" ", " ", " "], [" ", " ", " "]])
 boardTM = Board(False, " ", [[" ", " ", " "], [" ", " ", " "], [" ", " ", " "]])
@@ -562,7 +562,6 @@ def makeMove(currentPlayer, currentBoardNum, playerToken, computerToken):
     return fullBoardDict[nextBoardNum], nextBoardNum
 
 
-# ==================== MAIN GAME ====================
 
 playerToken, computerToken, firstMove = setup()
 setupOutput(playerToken, computerToken, firstMove)
