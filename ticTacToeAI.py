@@ -228,22 +228,37 @@ def makeFirstMove(currentPlayer):
 def makeMove(currentPlayer, currentBoard):
     if currentBoard.complete == True:
         printFullBoards()
-        currentBoard = makeFirstMove(currentPlayer)
+        return makeFirstMove(currentPlayer, playerToken, computerToken)
     else:
-        individualBoard = int(input("What tile would you like to place on? (1-9) >> "))
-        while individualBoard < 1 or individualBoard > 9 or len(str(individualBoard)) != 1:
-            individualBoard = int(input("Invalid! Enter between 1 and 9 >> "))
-        individualBoard = individualBoard - 1
-        row = (individualBoard // 3)
-        columb = (individualBoard % 3)
-        while currentBoard.layout[row][columb] != " ":
-            individualBoard = int(input("Invalid! Tile already in use >> "))
-            while individualBoard < 1 or individualBoard > 9 or len(str(individualBoard)) != 1:
+        if currentPlayer == computerToken:
+            # Use improved minimax
+            bestMove = findBestMoveUltimate(fullBoardDict, currentBoardNum, computerToken, playerToken, maxDepth=4)
+            
+            if bestMove:
+                boardNum, row, col = bestMove
+                currentBoard = fullBoardDict[boardNum]
+                currentBoard.layout[row][col] = computerToken
+                individualBoard = row * 3 + col + 1
+                print(f"Computer placed {computerToken} at tile {individualBoard}")
+            else:
+                # Fallback if no move found
+                print("Error: No valid move found")
+                return currentBoard, currentBoardNum
+        else:
+            individualBoard = int(input("What tile would you like to place on? (1-9) >> "))
+            while individualBoard < 1 or individualBoard > 9:
                 individualBoard = int(input("Invalid! Enter between 1 and 9 >> "))
             individualBoard = individualBoard - 1
-            row = individualBoard // 3
-            columb = individualBoard % 3
-        currentBoard.layout[row][columb] = currentPlayer
+            row = (individualBoard // 3)
+            col = (individualBoard % 3)
+            while currentBoard.layout[row][col] != " ":
+                individualBoard = int(input("Invalid! Tile already in use >> "))
+                while individualBoard < 1 or individualBoard > 9:
+                    individualBoard = int(input("Invalid! Enter between 1 and 9 >> "))
+                individualBoard = individualBoard - 1
+                row = individualBoard // 3
+                col = individualBoard % 3
+            currentBoard.layout[row][col] = currentPlayer
     
     currentBoard.checkWin()
 
@@ -272,7 +287,12 @@ while not(gameWon):
     else:
         currentPlayer = playerToken
     printFullBoards()
-    currentBoard = makeMove(currentPlayer, currentBoard)
+
+    # Find and print which board is active
+    print(f">>> PLAYING ON BOARD {currentBoardNum} <<<")
+
+    currentBoard, currentBoardNum = makeMove(currentPlayer, currentBoardNum, playerToken, computerToken)
+    
     if currentBoard.complete == True:
         printFullBoards()
         currentBoard = makeFirstMove(currentPlayer)
