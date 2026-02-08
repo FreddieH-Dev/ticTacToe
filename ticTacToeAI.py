@@ -1,13 +1,7 @@
 import random
 import time
 
-# Adjust AI difficulty here:
-# SEARCH_DEPTH = 2  (Fast, basic strategy)
-# SEARCH_DEPTH = 3  (Balanced - good for most games)
-# SEARCH_DEPTH = 4  (Strong, slower)
-# SEARCH_DEPTH = 5+ (Very strong, much slower)
-
-SEARCH_DEPTH = 3  # <-- Change this value to adjust AI strength
+SEARCH_DEPTH = None  # <-- Change this value to adjust AI strength
 
 # Show computer's thinking process? (True/False)
 SHOW_THINKING = False  # <-- Set to False for cleaner output
@@ -384,6 +378,32 @@ fullBoardDict = {
     9 : boardBR
 }
 
+def beginning():
+    print("Welcome to Ultimate Tic Tac Toe!")
+    rules = str(input("Would you like to read the rules? (y/n) >> "))
+    while rules.lower() != "y" and rules.lower() != "n":
+        rules = str(input("Invalid input. Please enter 'y' for yes or 'n' for no: >> "))
+    if rules.lower() == "y":
+        print("\nRules:")
+        print("1. The game is played on a 3x3 grid of tic tac toe boards (9 boards total).")
+        print("2. Each small board is a regular tic tac toe game.")
+        print("3. To win a small board, get 3 in a row on that board.")
+        print("4. To win the overall game, win 3 small boards in a row (horizontally, vertically, or diagonally).")
+        print("5. On your turn, you must play on the board corresponding to your opponent's last move.")
+        print("   For example, if your opponent played in the top right corner of their board, you must play on the top right board.")
+        print("6. If you are sent to a board that is already won or full, you can play on any other board.")
+        print("7. The first player to win 3 boards in a row wins the game!")
+        print("\nGood luck and have fun playing!\n")
+    
+    difficulty = int(input("Choose AI difficulty (1-5, higher is harder): >> "))
+    while difficulty < 1 or difficulty > 5:
+        difficulty = int(input("Invalid input. Please enter a number between 1 and 5: >> "))
+    
+    print()
+    
+    return difficulty
+    
+
 
 def printFullBoards():
     top    = [boardTL.getRows(), boardTM.getRows(), boardTR.getRows()]
@@ -562,7 +582,7 @@ def makeMove(currentPlayer, currentBoardNum, playerToken, computerToken):
     return fullBoardDict[nextBoardNum], nextBoardNum
 
 
-
+SEARCH_DEPTH = beginning()
 playerToken, computerToken, firstMove = setup()
 setupOutput(playerToken, computerToken, firstMove)
 
