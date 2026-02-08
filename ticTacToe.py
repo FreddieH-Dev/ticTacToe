@@ -69,43 +69,46 @@ class Board:
                 for j in range(3):
                     if self.layout[i][j] != " ":
                         count = count + 1
-                        if count == 9:
-                            self.complete = True
-                            self.winner = "TIE"
-                            for x in range(3):
-                                for y in range(3):
-                                    self.layout[x][y] = self.winner
-                        return
+            
+            if count == 9:
+                self.complete = True
+                self.winner = "TIE"
+                for x in range(3):
+                    for y in range(3):
+                        self.layout[x][y] = self.winner
                     
 def checkFullWin(gameWon):
-    #checks rows
+    # checks rows correctly
     for i in range(3):
-            if fullBoardDict[i+1].winner == fullBoardDict[i+1].winner == fullBoardDict[i+1].winner != " " and fullBoardDict[i+1].winner != "TIE":
-                gameWon = True
-                print(f"{fullBoardDict[i+1].winner} wins the game!")
-                return gameWon
+        if (fullBoardDict[i*3+1].winner == fullBoardDict[i*3+2].winner == fullBoardDict[i*3+3].winner != " " 
+            and fullBoardDict[i*3+1].winner != "TIE"):
+            gameWon = True
+            printFullBoards()
+            print(f"{fullBoardDict[i*3+1].winner} wins the game!")
+            return gameWon
     
-    #checks columns
+    # checks columns
     for j in range(3):
         if fullBoardDict[j+1].winner == fullBoardDict[j+4].winner == fullBoardDict[j+7].winner != " " and fullBoardDict[j+1].winner != "TIE":
             gameWon = True
+            printFullBoards()
             print(f"{fullBoardDict[j+1].winner} wins the game!")
             return gameWon
     
-    #checks diagonals
+    # checks diagonals
     if fullBoardDict[1].winner == fullBoardDict[5].winner == fullBoardDict[9].winner != " " and fullBoardDict[1].winner != "TIE":
         gameWon = True
+        printFullBoards()
         print(f"{fullBoardDict[1].winner} wins the game!")
         return gameWon
     
     if fullBoardDict[3].winner == fullBoardDict[5].winner == fullBoardDict[7].winner != " " and fullBoardDict[3].winner != "TIE":
         gameWon = True
+        printFullBoards()
         print(f"{fullBoardDict[3].winner} wins the game!")
         return gameWon
-                
-
-
-
+    
+    return gameWon
 
 
 boardTL = Board(False, " ", [[" ", " ", " "], [" ", " ", " "], [" ", " ", " "]])
@@ -230,8 +233,6 @@ def makeFirstMove(currentPlayer):
         currentBoard = fullBoardDict[fullBoard]
     
     currentBoard, row, columb = makeMove(currentPlayer, currentBoard)
-
-    currentBoard = fullBoardDict[(row * 3) + (columb)+1]
     
     return currentBoard
 
@@ -241,6 +242,7 @@ def makeMove(currentPlayer, currentBoard):
     if currentBoard.complete == True:
         printFullBoards()
         currentBoard = makeFirstMove(currentPlayer)
+        return currentBoard, 0, 0
     else:
         individualBoard = int(input("What tile would you like to place on? (1-9) >> "))
         while individualBoard < 1 or individualBoard > 9 or len(str(individualBoard)) != 1:
@@ -257,11 +259,11 @@ def makeMove(currentPlayer, currentBoard):
             columb = individualBoard % 3
         currentBoard.layout[row][columb] = currentPlayer
     
-    currentBoard.checkWin()
+        currentBoard.checkWin()
 
-    currentBoard = fullBoardDict[(row * 3) + (columb)+1]
+        currentBoard = fullBoardDict[(row * 3) + (columb)+1]
 
-    return currentBoard, row, columb
+        return currentBoard, row, columb
     
 beginning()
 
@@ -293,3 +295,4 @@ while not(gameWon):
 
     currentBoard, row, columb = makeMove(currentPlayer, currentBoard)
     
+    gameWon = checkFullWin(gameWon)
