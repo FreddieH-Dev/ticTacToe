@@ -158,30 +158,46 @@ def printFullBoards():
             print("# # # # # # # # # # # # # # # # #")
     print("\n\n")
     
-
+def beginning():
+    print("Welcome to Ultimate Tic Tac Toe!")
+    rules = str(input("Would you like to read the rules? (y/n) >> "))
+    while rules.lower() != "y" and rules.lower() != "n":
+        rules = str(input("Invalid input. Please enter 'y' for yes or 'n' for no: >> "))
+    if rules.lower() == "y":
+        print("\nRules:")
+        print("1. The game is played on a 3x3 grid of tic tac toe boards (9 boards total).")
+        print("2. Each small board is a regular tic tac toe game.")
+        print("3. To win a small board, get 3 in a row on that board.")
+        print("4. To win the overall game, win 3 small boards in a row (horizontally, vertically, or diagonally).")
+        print("5. On your turn, you must play on the board corresponding to your opponent's last move.")
+        print("   For example, if your opponent played in the top right corner of their board, you must play on the top right board.")
+        print("6. If you are sent to a board that is already won or full, you can play on any other board.")
+        print("7. The first player to win 3 boards in a row wins the game!")
+        print("\nGood luck and have fun playing!")
 
 def setup():
-    playerToken = int(input("Would you rather be X or O? (1,2): >> "))
-    while playerToken != 1 and playerToken != 2:
-        playerToken = int(input("Invalid input. Please enter 1 for X or 2 for O: >> "))
-    if playerToken == 1:
-        playerToken = "X"
-        computerToken = "O"
+    print()
+    player1Token = int(input("Would you rather be X or O? (1,2): >> "))
+    while player1Token != 1 and player1Token != 2:
+        player1Token = int(input("Invalid input. Please enter 1 for X or 2 for O: >> "))
+    if player1Token == 1:
+        player1Token = "X"
+        player2Token = "O"
     else:
-        playerToken = "O"
-        computerToken = "X"
+        player1Token = "O"
+        player2Token = "X"
     
     coinFlip = random.randint(1,2)
     if coinFlip == 1:
-        return playerToken, computerToken, True
+        return player1Token, player2Token, True
     else:
-        return playerToken, computerToken, False
+        return player1Token, player2Token, False
 
 
     
-def setupOutput(playerToken, computerToken, firstMove):
-    print(f"You are playing as: {playerToken}")
-    print(f"Computer is playing as: {computerToken}")
+def setupOutput(player1Token, player2Token, firstMove):
+    print(f"player 1 is playing as: {player1Token}")
+    print(f"player 2 is playing as: {player2Token}")
 
     print()
 
@@ -193,9 +209,9 @@ def setupOutput(playerToken, computerToken, firstMove):
     print()
 
     if firstMove:
-        print("You are playing first!")
+        print("player 1 is playing first!")
     else:
-        print("Computer is playing first!")
+        print("player 2 is playing first!")
 
     time.sleep(1)
     print("\n\n")
@@ -207,17 +223,13 @@ def makeFirstMove(currentPlayer):
     while fullBoard < 1 or fullBoard > 9 or len(str(fullBoard)) != 1:
         fullBoard = int(input("Invalid! Enter between 1 and 9 >> "))
     currentBoard = fullBoardDict[fullBoard]
+    while currentBoard.complete == True:
+        fullBoard = int(input("Invalid! Board already won or full. Enter between 1 and 9 >> "))
+        while fullBoard < 1 or fullBoard > 9 or len(str(fullBoard)) != 1:
+            fullBoard = int(input("Invalid! Enter between 1 and 9 >> "))
+        currentBoard = fullBoardDict[fullBoard]
     
-    individualBoard = int(input("What tile would you like to place on? (1-9) >> "))
-    while individualBoard < 1 or individualBoard > 9 or len(str(individualBoard)) != 1:
-        individualBoard = int(input("Invalid! Enter between 1 and 9 >> "))
-    individualBoard = individualBoard - 1
-    row = (individualBoard // 3)
-    columb = (individualBoard % 3)
-    currentBoard.layout[row][columb] = currentPlayer
-    
-    # Check if this move won the board
-    currentBoard.checkWin()
+    currentBoard, row, columb = makeMove(currentPlayer, currentBoard)
 
     currentBoard = fullBoardDict[(row * 3) + (columb)+1]
     
@@ -249,31 +261,35 @@ def makeMove(currentPlayer, currentBoard):
 
     currentBoard = fullBoardDict[(row * 3) + (columb)+1]
 
-    return currentBoard
+    return currentBoard, row, columb
     
-    
-#playerToken = "X"
-#computerToken = "O"
-#firstMove = True
+beginning()
 
-playerToken, computerToken, firstMove = setup()
-setupOutput(playerToken, computerToken, firstMove)
+player1Token, player2Token, firstMove = setup()
+
+setupOutput(player1Token, player2Token, firstMove)
+
 if firstMove == True:
-    currentPlayer = playerToken
+    currentPlayer = player1Token
 else:
-    currentPlayer = computerToken
+    currentPlayer = player2Token
 
 printFullBoards()
 currentBoard = makeFirstMove(currentPlayer)
 
 while not(gameWon):
-    if currentPlayer == playerToken:
-        currentPlayer = computerToken
+    if currentPlayer == player1Token:
+        currentPlayer = player2Token
     else:
-        currentPlayer = playerToken
+        currentPlayer = player1Token
+
     printFullBoards()
-    currentBoard = makeMove(currentPlayer, currentBoard)
-    if currentBoard.complete == True:
-        printFullBoards()
-        currentBoard = makeFirstMove(currentPlayer)
-    gameWon = checkFullWin(gameWon)
+
+    for num, board in fullBoardDict.items():
+        if board is currentBoard:
+            print(f">>> PLAYING ON BOARD {num} <<<")
+            break
+    print(f"Current player: {currentPlayer}\n")
+
+    currentBoard, row, columb = makeMove(currentPlayer, currentBoard)
+    
