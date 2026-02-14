@@ -3,9 +3,6 @@ import time
 
 SEARCH_DEPTH = None  # <-- Change this value to adjust AI strength
 
-# Show computer's thinking process? (True/False)
-SHOW_THINKING = False  # <-- Set to False for cleaner output
-
 gameWon = False
 
 
@@ -203,31 +200,20 @@ nodesEvaluated = 0
 
 
 def minimax(boardDict, currentBoardNum, depth, maxDepth, isMaximizing, 
-            computerToken, playerToken, indent="", moveDescription=""):
-    """
-    Minimax algorithm that evaluates entire game state
-    Returns: (score, best_move)
-    """
+            computerToken, playerToken):
     global thoughtTreeLines, nodesEvaluated
     nodesEvaluated += 1
     
-    # Print thought process (only if showing thinking and at shallow depth)
-    if SHOW_THINKING and depth <= 2:
-        thoughtTreeLines.append(f"{indent}{moveDescription}")
     
     # Check if game is over
     winner = checkGameWinner(boardDict)
     if winner is not None:
         score = evaluateGameState(boardDict, computerToken, playerToken)
-        if SHOW_THINKING and depth <= 2:
-            thoughtTreeLines.append(f"{indent}  → Game Over! Winner: {winner}, Score: {score}")
         return score, None
     
     # Check depth limit
     if depth >= maxDepth:
         score = evaluateGameState(boardDict, computerToken, playerToken)
-        if SHOW_THINKING and depth <= 2:
-            thoughtTreeLines.append(f"{indent}  → Depth limit. Score: {score}")
         return score, None
     
     # Get all valid moves
@@ -255,8 +241,7 @@ def minimax(boardDict, currentBoardNum, depth, maxDepth, isMaximizing,
             
             # Recursive call
             score, _ = minimax(newBoardDict, nextBoardNum, depth + 1, maxDepth, 
-                              False, computerToken, playerToken, 
-                              indent + "  ", moveDesc)
+                              False, computerToken, playerToken)
             
             if score > maxScore:
                 maxScore = score
@@ -280,8 +265,7 @@ def minimax(boardDict, currentBoardNum, depth, maxDepth, isMaximizing,
             
             # Recursive call
             score, _ = minimax(newBoardDict, nextBoardNum, depth + 1, maxDepth, 
-                              True, computerToken, playerToken, 
-                              indent + "  ", moveDesc)
+                              True, computerToken, playerToken)
             
             if score < minScore:
                 minScore = score
@@ -291,40 +275,18 @@ def minimax(boardDict, currentBoardNum, depth, maxDepth, isMaximizing,
 
 
 def findBestMove(fullBoardDict, currentBoardNum, computerToken, playerToken):
-    """Find the best move using minimax"""
     global thoughtTreeLines, nodesEvaluated
-    
-    if SHOW_THINKING:
-        print(f"Computer thinking (depth {SEARCH_DEPTH})...", end='', flush=True)
     
     thoughtTreeLines = []
     nodesEvaluated = 0
     startTime = time.time()
     
     score, bestMove = minimax(fullBoardDict, currentBoardNum, 0, SEARCH_DEPTH, 
-                              True, computerToken, playerToken, "", "ROOT: ")
-    
-    elapsedTime = time.time() - startTime
-    
-    if SHOW_THINKING:
-        print(f" done! ({elapsedTime:.2f}s)")
-        
-        # Print thought tree for smaller depths
-        if SEARCH_DEPTH <= 3:
-            print("\nThought process (first 2 levels):")
-            for line in thoughtTreeLines[:30]:
-                print(line)
-            if len(thoughtTreeLines) > 30:
-                print(f"... ({len(thoughtTreeLines) - 30} more)")
-            print()
-        
-        print(f"Evaluated {nodesEvaluated} positions, Score: {score}")
-    
+                              True, computerToken, playerToken)
     return bestMove
 
 
 def checkFullWin(gameWon):
-    """Check if the game is won"""
     # Check rows
     for i in range(3):
         if (fullBoardDict[i*3+1].winner == fullBoardDict[i*3+2].winner == fullBoardDict[i*3+3].winner != " " 
