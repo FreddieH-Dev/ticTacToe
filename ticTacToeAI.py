@@ -194,15 +194,9 @@ def applyMove(boardDict, boardNum, row, col, token):
     return nextBoardNum
 
 
-# Global variables for thought tree printing
-thoughtTreeLines = []
-nodesEvaluated = 0
-
 
 def minimax(boardDict, currentBoardNum, depth, maxDepth, isMaximizing, 
             computerToken, playerToken):
-    global thoughtTreeLines, nodesEvaluated
-    nodesEvaluated += 1
     
     
     # Check if game is over
@@ -275,11 +269,7 @@ def minimax(boardDict, currentBoardNum, depth, maxDepth, isMaximizing,
 
 
 def findBestMove(fullBoardDict, currentBoardNum, computerToken, playerToken):
-    global thoughtTreeLines, nodesEvaluated
     
-    thoughtTreeLines = []
-    nodesEvaluated = 0
-    startTime = time.time()
     
     score, bestMove = minimax(fullBoardDict, currentBoardNum, 0, SEARCH_DEPTH, 
                               True, computerToken, playerToken)
