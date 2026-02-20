@@ -48,11 +48,11 @@ def startUp():
 
         # X and O boxes
         for i in list(["X", "O"]):
-            r = pygame.Rect(20 + list(["X", "O"]).index(i)*160, 120, 120, 120)
+            r = pygame.Rect(400 + list(["X", "O"]).index(i)*160, 150, 120, 120)
             tokenBoxes.append(r)
             pygame.draw.rect(screen, "Grey", r, 0)
             pygame.draw.rect(screen, (0,0,0), r, 2)
-            t, tr = write(i, r.x+35, r.y+35, "Black")
+            t, tr = write(i, r.x+47, r.y+38, "Black")
             screen.blit(t, tr)
 
         pygame.display.flip()
@@ -85,7 +85,8 @@ def startUp():
                         print(f"Difficulty: {chosenDifficulty}")
 
                 # Check token boxes
-                for i, rect in enumerate(tokenBoxes):
+                for i in range(2):
+                    rect = tokenBoxes[i]
                     if rect.x < mouseX < rect.x + rect.width and rect.y < mouseY < rect.y + rect.height:
                         chosenToken = ["X", "O"][i]
                         # Redraw both token boxes, highlight chosen
@@ -93,7 +94,7 @@ def startUp():
                             color = (255, 30, 30) if j == i else "Grey"
                             pygame.draw.rect(screen, color, r, 0)
                             pygame.draw.rect(screen, (0,0,0), r, 2)
-                            t, tr = write(["X","O"][j], r.x+35, r.y+35, "Black")
+                            t, tr = write(["X","O"][j], r.x+47, r.y+38, "Black")
                             screen.blit(t, tr)
                         print(f"Token: {chosenToken}")
 
