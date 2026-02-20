@@ -1,6 +1,5 @@
 import pygame
 import random
-import time
 
 SEARCH_DEPTH = None
 gameWon = False
@@ -8,6 +7,7 @@ gameWon = False
 HEIGHT = 720
 WIDTH = 1080
 MAX_SIZE = 210
+SMALL_SIZE = MAX_SIZE // 3
 SPREAD = (HEIGHT - (MAX_SIZE * 3)) // 2
 
 pygame.init()
@@ -20,6 +20,8 @@ fontObj = pygame.font.Font('freesansbold.ttf', 32)
 
 pygame.display.set_caption('Tic Tac Toe')
 
+
+
 def write(text, x, y, color):
     surface = fontObj.render(text, True, pygame.Color(color))
     rect = surface.get_rect(topleft=(x, y))
@@ -29,6 +31,13 @@ def drawBoard(MAX_SIZE):
     for i in range(3):
         for j in range(3):
             pygame.draw.rect(screen, (0, 0, 0), (i*MAX_SIZE+SPREAD, j*MAX_SIZE+SPREAD, MAX_SIZE, MAX_SIZE), 2)
+            
+def drawX(x, y):
+    pygame.draw.line(screen, (255, 0, 0), (x-50,y-50), (x+50, y+50), width=3)
+    pygame.draw.line(screen, (255, 0, 0), (x-50,y+50), (x+50, y-50), width=3)
+
+def drawO(x, y):
+    pygame.draw.circle(screen, (0, 0, 255), (x + MAX_SIZE//2, y + MAX_SIZE//2), 50, width=3)
 
 class interactiveBoard:
     def __init__(self, boardNum, x, y):
@@ -36,11 +45,13 @@ class interactiveBoard:
         self.x = x
         self.y = y
         
-    def clicked(self, clickPos):
+    def clicked(self, clickPos, currentPlayer):
         if clickPos[0] > self.x and clickPos[0] < self.x + MAX_SIZE and clickPos[1] > self.y and clickPos[1] < self.y + MAX_SIZE:
-            return True
+            if currentPlayer == "X":
+                drawX(self.x + SMALL_SIZE//2, self.y + SMALL_SIZE//2)
+            else:
+                drawO(self.x + SMALL_SIZE//2, self.y + SMALL_SIZE//2)
         
-    
 
 
 class Board:
@@ -393,10 +404,79 @@ def printFullBoards():
     print("\n\n")
 
 
+def text(currentBoardNum):
+    script = f"Current Board: {currentBoardNum}\nAI level: {SEARCH_DEPTH}\nWinner: {checkGameWinner(fullBoardDict)}\n"
+    text, textRect = write(script, (SPREAD*2) + (MAX_SIZE * 3), HEIGHT * 0.25, "Black")
+    screen.blit(text, textRect)
+    
+
+def renderBoards(currentBoardNum):
+    screen.fill("Grey")
+    text(currentBoardNum)
+    drawBoard(MAX_SIZE)
+    for bigNum in range(1, 10):
+        board = fullBoardDict[bigNum]
+        bigRow = (bigNum - 1) // 3
+        bigCol = (bigNum - 1) % 3
+        bigX = SPREAD + bigCol * MAX_SIZE
+        bigY = SPREAD + bigRow * MAX_SIZE
+        for row in range(3):
+            for col in range(3):
+                cellX = bigX + col * SMALL_SIZE
+                cellY = bigY + row * SMALL_SIZE
+                pygame.draw.rect(screen, (0, 0, 0), (cellX, cellY, SMALL_SIZE, SMALL_SIZE), 1)
+                token = board.layout[row][col]
+                cx = cellX + SMALL_SIZE // 2
+                cy = cellY + SMALL_SIZE // 2
+                if token == "X":
+                    pygame.draw.line(screen, (255, 0, 0), (cx-20, cy-20), (cx+20, cy+20), width=3)
+                    pygame.draw.line(screen, (255, 0, 0), (cx-20, cy+20), (cx+20, cy-20), width=3)
+                elif token == "O":
+                    pygame.draw.circle(screen, (0, 0, 255), (cx, cy), 20, width=3)
+    pygame.display.flip()
+
+
+def waitForPlayerClick(currentBoardNum):
+    while True:
+        renderBoards(currentBoardNum)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                mouseX, mouseY = event.pos
+                if mouseX < SPREAD or mouseY < SPREAD:
+                    continue
+                if mouseX > SPREAD + MAX_SIZE * 3 or mouseY > SPREAD + MAX_SIZE * 3:
+                    continue
+                bigCol = (mouseX - SPREAD) // MAX_SIZE
+                bigRow = (mouseY - SPREAD) // MAX_SIZE
+                if bigCol > 2 or bigRow > 2:
+                    continue
+                bigNum = bigRow * 3 + bigCol + 1
+                localX = (mouseX - SPREAD) % MAX_SIZE
+                localY = (mouseY - SPREAD) % MAX_SIZE
+                col = localX // SMALL_SIZE
+                row = localY // SMALL_SIZE
+                if col > 2 or row > 2:
+                    continue
+                # Validate the move
+                if currentBoardNum is not None and not fullBoardDict[currentBoardNum].complete:
+                    if bigNum != currentBoardNum:
+                        print(f"You must play on board {currentBoardNum}!")
+                        continue
+                if fullBoardDict[bigNum].complete:
+                    print("That board is already complete!")
+                    continue
+                if fullBoardDict[bigNum].layout[row][col] != " ":
+                    print("That cell is already taken!")
+                    continue
+                return bigNum, row, col
+        clock.tick(60)
+
+
 def makeFirstMove(currentPlayer, playerToken, computerToken):
-    """Handle first move when any board can be chosen"""
     if currentPlayer == computerToken:
-        # Computer uses minimax
         bestMove = findBestMove(fullBoardDict, None, computerToken, playerToken)
         
         if bestMove:
@@ -410,6 +490,7 @@ def makeFirstMove(currentPlayer, playerToken, computerToken):
             print(f"Computer placed {computerToken} at tile {tileNum}")
             
             nextBoardNum = row * 3 + col + 1
+            renderBoards(nextBoardNum)
             return fullBoardDict[nextBoardNum], nextBoardNum
         else:
             # Fallback to random
@@ -421,36 +502,15 @@ def makeFirstMove(currentPlayer, playerToken, computerToken):
             currentBoard.checkWin()
             print(f"Computer chose board {boardNum}")
             nextBoardNum = row * 3 + col + 1
+            renderBoards(None)
             return fullBoardDict[nextBoardNum], nextBoardNum
     
-    # Player's turn
-    fullBoard = int(input("What board would you like to place on? (1-9) >> "))
-    while fullBoard < 1 or fullBoard > 9:
-        fullBoard = int(input("Invalid! Enter between 1 and 9 >> "))
-    
-    currentBoard = fullBoardDict[fullBoard]
-    
-    individualBoard = int(input("What tile would you like to place on? (1-9) >> "))
-    while individualBoard < 1 or individualBoard > 9:
-        individualBoard = int(input("Invalid! Enter between 1 and 9 >> "))
-    
-    individualBoard = individualBoard - 1
-    row = (individualBoard // 3)
-    col = (individualBoard % 3)
-    
-    while currentBoard.layout[row][col] != " ":
-        print("That spot is taken!")
-        individualBoard = int(input("What tile would you like to place on? (1-9) >> "))
-        while individualBoard < 1 or individualBoard > 9:
-            individualBoard = int(input("Invalid! Enter between 1 and 9 >> "))
-        individualBoard = individualBoard - 1
-        row = individualBoard // 3
-        col = individualBoard % 3
-    
-    currentBoard.layout[row][col] = currentPlayer
-    currentBoard.checkWin()
-    
-    nextBoardNum = (row * 3) + (col) + 1
+    print("Click any cell for your first move.")
+    bigNum, row, col = waitForPlayerClick(None)
+    fullBoardDict[bigNum].layout[row][col] = currentPlayer
+    fullBoardDict[bigNum].checkWin()
+    nextBoardNum = row * 3 + col + 1
+    renderBoards(None)
     return fullBoardDict[nextBoardNum], nextBoardNum
 
 
@@ -459,7 +519,7 @@ def makeMove(currentPlayer, currentBoardNum, playerToken, computerToken):
     currentBoard = fullBoardDict[currentBoardNum]
     
     if currentBoard.complete:
-        printFullBoards()
+        #printFullBoards()
         return makeFirstMove(currentPlayer, playerToken, computerToken)
     
     if currentPlayer == computerToken:
@@ -476,68 +536,49 @@ def makeMove(currentPlayer, currentBoardNum, playerToken, computerToken):
             print(f"Computer placed {computerToken} at tile {tileNum}")
             
             nextBoardNum = row * 3 + col + 1
+            renderBoards(nextBoardNum)
             return fullBoardDict[nextBoardNum], nextBoardNum
         else:
             print("Error: No valid move found")
             return currentBoard, currentBoardNum
     
-    # Player's turn
-    individualBoard = int(input("What tile would you like to place on? (1-9) >> "))
-    while individualBoard < 1 or individualBoard > 9:
-        individualBoard = int(input("Invalid! Enter between 1 and 9 >> "))
-    
-    individualBoard = individualBoard - 1
-    row = (individualBoard // 3)
-    col = (individualBoard % 3)
-    
-    while currentBoard.layout[row][col] != " ":
-        individualBoard = int(input("Invalid! Tile already in use >> "))
-        while individualBoard < 1 or individualBoard > 9:
-            individualBoard = int(input("Invalid! Enter between 1 and 9 >> "))
-        individualBoard = individualBoard - 1
-        row = individualBoard // 3
-        col = individualBoard % 3
-    
-    currentBoard.layout[row][col] = currentPlayer
-    currentBoard.checkWin()
-    
-    nextBoardNum = (row * 3) + (col) + 1
+    # Player's turn — click a valid cell on the current board
+    print(f"Click a cell on board {currentBoardNum}.")
+    bigNum, row, col = waitForPlayerClick(currentBoardNum)
+    fullBoardDict[bigNum].layout[row][col] = currentPlayer
+    fullBoardDict[bigNum].checkWin()
+    nextBoardNum = row * 3 + col + 1
+    renderBoards(nextBoardNum)
     return fullBoardDict[nextBoardNum], nextBoardNum
 
 
 SEARCH_DEPTH = 3
 playerToken = "X"
 computerToken = "O"
-firstMove = True
+firstMove = False
 
 if firstMove:
     currentPlayer = playerToken
 else:
     currentPlayer = computerToken
 
-printFullBoards()
+#printFullBoards()
+renderBoards(None)
 currentBoard, currentBoardNum = makeFirstMove(currentPlayer, playerToken, computerToken)
 
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:  # Left click
-                clickPos = event.pos
-                print(f"Left click at {event.pos}")
-    
-    screen.fill("Grey")
-    drawBoard(MAX_SIZE)
 
-    while not gameWon:
+    if not gameWon:
         # Switch player
         if currentPlayer == playerToken:
             currentPlayer = computerToken
         else:
             currentPlayer = playerToken
         
-        printFullBoards()
+        #printFullBoards()
         
         # Find and print which board is active
         for num, board in fullBoardDict.items():
@@ -548,7 +589,12 @@ while running:
         currentBoard, currentBoardNum = makeMove(currentPlayer, currentBoardNum, playerToken, computerToken)
         
         if currentBoard.complete:
-            printFullBoards()
+            #printFullBoards()
             currentBoard, currentBoardNum = makeFirstMove(currentPlayer, playerToken, computerToken)
         
         gameWon = checkFullWin(gameWon)
+
+    renderBoards(currentBoardNum)
+    clock.tick(60)
+
+pygame.quit()
