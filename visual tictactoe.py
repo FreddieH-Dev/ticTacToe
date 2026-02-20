@@ -1,5 +1,6 @@
 import pygame
 import random
+import time
 
 SEARCH_DEPTH = None
 gameWon = False
@@ -20,12 +21,89 @@ fontObj = pygame.font.Font('freesansbold.ttf', 32)
 
 pygame.display.set_caption('Tic Tac Toe')
 
+def startUp():
+    completeStartUp = False
+    chosenDifficulty = None
+    chosenToken = None
 
+    def drawScreen():
+        screen.fill("Grey")
 
-def write(text, x, y, color):
-    surface = fontObj.render(text, True, pygame.Color(color))
-    rect = surface.get_rect(topleft=(x, y))
-    return surface, rect
+        title, titleRect = write("Welcome to Ultimate Tic Tac Toe!", 20, 20, "Black")
+        screen.blit(title, titleRect)
+
+        diffLabel, diffLabelRect = write("Choose Difficulty:", 100, HEIGHT-270, "Black")
+        screen.blit(diffLabel, diffLabelRect)
+
+        for i in range(5):
+            r = pygame.Rect(165+(150*i), HEIGHT-200, 150, 150)
+            diffBoxes.append(r)
+            pygame.draw.rect(screen, "Grey", r, 0)
+            pygame.draw.rect(screen, (0,0,0), r, 2)
+            numText, numRect = write(str(i+1), r.x+65, r.y+60, "Black")
+            screen.blit(numText, numRect)
+
+        tokenLabel, tokenLabelRect = write("Choose X or O:", 100, 100, "Black")
+        screen.blit(tokenLabel, tokenLabelRect)
+
+        # X and O boxes
+        for i in list(["X", "O"]):
+            r = pygame.Rect(20 + list(["X", "O"]).index(i)*160, 120, 120, 120)
+            tokenBoxes.append(r)
+            pygame.draw.rect(screen, "Grey", r, 0)
+            pygame.draw.rect(screen, (0,0,0), r, 2)
+            t, tr = write(i, r.x+35, r.y+35, "Black")
+            screen.blit(t, tr)
+
+        pygame.display.flip()
+
+    diffBoxes = []
+    tokenBoxes = []
+    drawScreen()
+
+    while not completeStartUp:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                mouseX, mouseY = event.pos
+
+                # Check difficulty boxes
+                for i in range(5):
+                    rect = diffBoxes[i]
+                    if rect.x < mouseX < rect.x + rect.width and rect.y < mouseY < rect.y + rect.height:
+                        chosenDifficulty = i + 1
+                        # Redraw all diff boxes, highlight chosen
+                        for j, r in enumerate(diffBoxes):
+                            color = (255, 30, 30) if j == i else "Grey"
+                            pygame.draw.rect(screen, color, r, 0)
+                            pygame.draw.rect(screen, (0,0,0), r, 2)
+                            num, numRect = write(str(j+1), r.x+65, r.y+60, "Black")
+                            screen.blit(num, numRect)
+                        print(f"Difficulty: {chosenDifficulty}")
+
+                # Check token boxes
+                for i, rect in enumerate(tokenBoxes):
+                    if rect.x < mouseX < rect.x + rect.width and rect.y < mouseY < rect.y + rect.height:
+                        chosenToken = ["X", "O"][i]
+                        # Redraw both token boxes, highlight chosen
+                        for j, r in enumerate(tokenBoxes):
+                            color = (255, 30, 30) if j == i else "Grey"
+                            pygame.draw.rect(screen, color, r, 0)
+                            pygame.draw.rect(screen, (0,0,0), r, 2)
+                            t, tr = write(["X","O"][j], r.x+35, r.y+35, "Black")
+                            screen.blit(t, tr)
+                        print(f"Token: {chosenToken}")
+
+                pygame.display.flip()
+
+                if chosenDifficulty and chosenToken:
+                    completeStartUp = True
+
+    return chosenDifficulty, chosenToken
+
 
 def drawBoard(MAX_SIZE):
     for i in range(3):
@@ -404,15 +482,20 @@ def printFullBoards():
     print("\n\n")
 
 
-def text(currentBoardNum):
+def write(onScreenText, x, y, color):
+    surface = fontObj.render(onScreenText, True, pygame.Color(color))
+    rect = surface.get_rect(topleft=(x, y))
+    return surface, rect
+
+def onScreenText(currentBoardNum):
     script = f"Current Board: {currentBoardNum}\nAI level: {SEARCH_DEPTH}\nWinner: {checkGameWinner(fullBoardDict)}\n"
-    text, textRect = write(script, (SPREAD*2) + (MAX_SIZE * 3), HEIGHT * 0.25, "Black")
-    screen.blit(text, textRect)
+    onScreenText, onScreenTextRect = write(script, (SPREAD*2) + (MAX_SIZE * 3), HEIGHT * 0.25, "Black")
+    screen.blit(onScreenText, onScreenTextRect)
     
 
 def renderBoards(currentBoardNum):
     screen.fill("Grey")
-    text(currentBoardNum)
+    onScreenText(currentBoardNum)
     drawBoard(MAX_SIZE)
     for bigNum in range(1, 10):
         board = fullBoardDict[bigNum]
@@ -557,12 +640,22 @@ playerToken = "X"
 computerToken = "O"
 firstMove = False
 
+
+
+
 if firstMove:
     currentPlayer = playerToken
 else:
     currentPlayer = computerToken
 
 #printFullBoards()
+
+SEARCH_DEPTH, playerToken = startUp()
+if playerToken == "X":
+    computerToken = "O"
+else:    
+    computerToken = "X"
+
 renderBoards(None)
 currentBoard, currentBoardNum = makeFirstMove(currentPlayer, playerToken, computerToken)
 
