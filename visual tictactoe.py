@@ -148,7 +148,7 @@ def startUp():
             diffBoxes.append(r)
             pygame.draw.rect(screen, "Grey", r, 0)
             pygame.draw.rect(screen, (0, 0, 0), r, 2)
-            numText, numRect = write(diffLabels[i], r.x + 55, r.y + 55, "Black")
+            numText, numRect = write(diffLabels[i], r.x + 65, r.y + 60, "Black")
             screen.blit(numText, numRect)
 
         tokenLabel, tokenLabelRect = write("Choose X or O:", 100, 100, "Black")
@@ -159,7 +159,7 @@ def startUp():
             tokenBoxes.append(r)
             pygame.draw.rect(screen, "Grey", r, 0)
             pygame.draw.rect(screen, (0, 0, 0), r, 2)
-            t, tr = write(token, r.x + 37, r.y + 38, "Black")
+            t, tr = write(token, r.x + 48, r.y + 45, "Black")
             screen.blit(t, tr)
 
         pygame.display.flip()
@@ -183,7 +183,7 @@ def startUp():
                             boxColor = (255, 30, 30) if j == i else "Grey"
                             pygame.draw.rect(screen, boxColor, r, 0)
                             pygame.draw.rect(screen, (0, 0, 0), r, 2)
-                            numText, numRect = write(diffLabels[j], r.x + 55, r.y + 55, "Black")
+                            numText, numRect = write(diffLabels[j], r.x + 65, r.y + 60, "Black")
                             screen.blit(numText, numRect)
                         print(f"Difficulty: {chosenDifficulty}")
 
@@ -195,7 +195,7 @@ def startUp():
                             boxColor = (255, 30, 30) if j == i else "Grey"
                             pygame.draw.rect(screen, boxColor, r, 0)
                             pygame.draw.rect(screen, (0, 0, 0), r, 2)
-                            t, tr = write(["X", "O"][j], r.x + 37, r.y + 38, "Black")
+                            t, tr = write(["X", "O"][j], r.x + 48, r.y + 45, "Black")
                             screen.blit(t, tr)
                         print(f"Token: {chosenToken}")
 
@@ -247,16 +247,16 @@ def drawBigO(bigNum):
 
 def winningLine(lineType, index):
     if lineType == "row":
-        pygame.draw.line(screen, (0, 0, 0), (SPREAD, SPREAD + index * MAX_SIZE + MAX_SIZE // 2), (SPREAD + MAX_SIZE * 3, SPREAD + index * MAX_SIZE + MAX_SIZE // 2), width=5)
+        pygame.draw.line(screen, (0, 0, 0), (SPREAD + 10, SPREAD + index * MAX_SIZE + MAX_SIZE // 2), ((SPREAD + MAX_SIZE * 3) - 10, SPREAD + index * MAX_SIZE + MAX_SIZE // 2), width=8)
     
     elif lineType == "col":
-        pygame.draw.line(screen, (0, 0, 0), (SPREAD + index * MAX_SIZE + MAX_SIZE // 2, SPREAD), (SPREAD + index * MAX_SIZE + MAX_SIZE // 2, SPREAD + MAX_SIZE * 3), width=5)
+        pygame.draw.line(screen, (0, 0, 0), (SPREAD + index * MAX_SIZE + MAX_SIZE // 2, SPREAD + 10), (SPREAD + index * MAX_SIZE + MAX_SIZE // 2, SPREAD + MAX_SIZE * 3 - 10), width=8)
     
     elif lineType == "diag":
         if index == 1:
-            pygame.draw.line(screen, (0, 0, 0), (SPREAD, SPREAD), (SPREAD + MAX_SIZE * 3, SPREAD + MAX_SIZE * 3), width=5)
+            pygame.draw.line(screen, (0, 0, 0), (SPREAD+10, SPREAD+10), ((SPREAD + MAX_SIZE * 3) - 10, (SPREAD + MAX_SIZE * 3) - 10), width=8)
         else:
-            pygame.draw.line(screen, (0, 0, 0), (SPREAD + MAX_SIZE * 3, SPREAD), (SPREAD, SPREAD + MAX_SIZE * 3), width=5)
+            pygame.draw.line(screen, (0, 0, 0), (SPREAD + MAX_SIZE * 3 - 10, SPREAD + 10), (SPREAD + 10, SPREAD + MAX_SIZE * 3 - 10), width=8)
             
     
     pygame.display.flip()
