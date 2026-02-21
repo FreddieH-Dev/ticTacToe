@@ -153,6 +153,22 @@ class interactiveBoard:
             else:
                 drawO(cx, cy)
 
+def winningLine(lineType, index):
+    if lineType == "row":
+        pygame.draw.line(screen, (0, 0, 0), (SPREAD, SPREAD + index * MAX_SIZE + MAX_SIZE // 2), (SPREAD + MAX_SIZE * 3, SPREAD + index * MAX_SIZE + MAX_SIZE // 2), width=5)
+    
+    elif lineType == "col":
+        pygame.draw.line(screen, (0, 0, 0), (SPREAD + index * MAX_SIZE + MAX_SIZE // 2, SPREAD), (SPREAD + index * MAX_SIZE + MAX_SIZE // 2, SPREAD + MAX_SIZE * 3), width=5)
+    
+    elif lineType == "diag":
+        if index == 1:
+            pygame.draw.line(screen, (0, 0, 0), (SPREAD, SPREAD), (SPREAD + MAX_SIZE * 3, SPREAD + MAX_SIZE * 3), width=5)
+        else:
+            pygame.draw.line(screen, (0, 0, 0), (SPREAD + MAX_SIZE * 3, SPREAD), (SPREAD, SPREAD + MAX_SIZE * 3), width=5)
+            
+    
+    pygame.display.flip()
+    
 
 class Board:
     def __init__(self, complete, winner, layout):
@@ -385,22 +401,26 @@ def checkFullWin(gameWon):
         if (fullBoardDict[i*3+1].winner == fullBoardDict[i*3+2].winner == fullBoardDict[i*3+3].winner != " "
                 and fullBoardDict[i*3+1].winner != "TIE"):
             print(f"{fullBoardDict[i*3+1].winner} wins the game!")
+            winningLine("row", i)
             return True
 
     for j in range(3):
         if (fullBoardDict[j+1].winner == fullBoardDict[j+4].winner == fullBoardDict[j+7].winner != " "
                 and fullBoardDict[j+1].winner != "TIE"):
             print(f"{fullBoardDict[j+1].winner} wins the game!")
+            winningLine("col", j)
             return True
 
     if (fullBoardDict[1].winner == fullBoardDict[5].winner == fullBoardDict[9].winner != " "
             and fullBoardDict[1].winner != "TIE"):
         print(f"{fullBoardDict[1].winner} wins the game!")
+        winningLine("diag", 1)
         return True
 
     if (fullBoardDict[3].winner == fullBoardDict[5].winner == fullBoardDict[7].winner != " "
             and fullBoardDict[3].winner != "TIE"):
         print(f"{fullBoardDict[3].winner} wins the game!")
+        winningLine("diag", 2)
         return True
 
     return False
@@ -609,9 +629,7 @@ while running:
 
         currentBoard, currentBoardNum = makeMove(currentPlayer, currentBoardNum, playerToken, computerToken)
 
-        gameWon = checkFullWin(gameWon)
-
     renderBoards(currentBoardNum)
-    clock.tick(60)
-
-pygame.quit()
+    gameWon = checkFullWin(gameWon)
+    if gameWon:
+        running = False
