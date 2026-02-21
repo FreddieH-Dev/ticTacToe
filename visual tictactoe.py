@@ -22,12 +22,6 @@ fontObj = pygame.font.Font('freesansbold.ttf', 32)
 pygame.display.set_caption('Ultimate Tic Tac Toe')
 
 
-def write(text, x, y, color):
-    surface = fontObj.render(text, True, pygame.Color(color))
-    rect = surface.get_rect(topleft=(x, y))
-    return surface, rect
-
-
 def startUp():
     completeStartUp = False
     chosenDifficulty = None
@@ -109,6 +103,12 @@ def startUp():
     return chosenDifficulty, chosenToken
 
 
+def write(text, x, y, color):
+    surface = fontObj.render(text, True, pygame.Color(color))
+    rect = surface.get_rect(topleft=(x, y))
+    return surface, rect
+
+
 def drawBoard():
     for i in range(3):
         for j in range(3):
@@ -123,6 +123,20 @@ def drawX(cx, cy):
 def drawO(cx, cy):
     pygame.draw.circle(screen, (0, 0, 255), (cx, cy), 20, width=3)
 
+def drawBigX(bigNum):
+    bigRow = (bigNum - 1) // 3
+    bigCol = (bigNum - 1) % 3
+    cx = SPREAD + bigCol * MAX_SIZE + MAX_SIZE // 2
+    cy = SPREAD + bigRow * MAX_SIZE + MAX_SIZE // 2
+    pygame.draw.line(screen, (255, 0, 0), (cx - 60, cy - 60), (cx + 60, cy + 60), width=4)
+    pygame.draw.line(screen, (255, 0, 0), (cx - 60, cy + 60), (cx + 60, cy - 60), width=4)
+    
+def drawBigO(bigNum):
+    bigRow = (bigNum - 1) // 3
+    bigCol = (bigNum - 1) % 3
+    cx = SPREAD + bigCol * MAX_SIZE + MAX_SIZE // 2
+    cy = SPREAD + bigRow * MAX_SIZE + MAX_SIZE // 2
+    pygame.draw.circle(screen, (0, 0, 255), (cx, cy), 60, width=4)
 
 class interactiveBoard:
     def __init__(self, boardNum, x, y):
@@ -435,19 +449,26 @@ def renderBoards(currentBoardNum):
         bigCol = (bigNum - 1) % 3
         bigX = SPREAD + bigCol * MAX_SIZE
         bigY = SPREAD + bigRow * MAX_SIZE
+        
+        if board.complete:
+            if board.winner == "X":
+                drawBigX(bigNum)
+            else:
+                drawBigO(bigNum)
 
-        for row in range(3):
-            for col in range(3):
-                cellX = bigX + col * SMALL_SIZE
-                cellY = bigY + row * SMALL_SIZE
-                pygame.draw.rect(screen, (0, 0, 0), (cellX, cellY, SMALL_SIZE, SMALL_SIZE), 1)
-                token = board.layout[row][col]
-                cx = cellX + SMALL_SIZE // 2
-                cy = cellY + SMALL_SIZE // 2
-                if token == "X":
-                    drawX(cx, cy)
-                elif token == "O":
-                    drawO(cx, cy)
+        else:
+            for row in range(3):
+                for col in range(3):
+                    cellX = bigX + col * SMALL_SIZE
+                    cellY = bigY + row * SMALL_SIZE
+                    pygame.draw.rect(screen, (0, 0, 0), (cellX, cellY, SMALL_SIZE, SMALL_SIZE), 1)
+                    token = board.layout[row][col]
+                    cx = cellX + SMALL_SIZE // 2
+                    cy = cellY + SMALL_SIZE // 2
+                    if token == "X":
+                        drawX(cx, cy)
+                    elif token == "O":
+                        drawO(cx, cy)
 
     pygame.display.flip()
 
