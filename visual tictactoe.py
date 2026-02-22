@@ -5,6 +5,12 @@ import time
 SEARCH_DEPTH = None
 gameWon = False
 
+backgroundColor = "grey"
+xColor = "red"
+oColor = "blue"
+gridColor = "black"
+winningLineColor = "black"
+
 HEIGHT = 720
 WIDTH = 1080
 MAX_SIZE = 210
@@ -135,7 +141,7 @@ def startUp():
     diffLabels = ["1", "2", "3", "4", "5"]
 
     def drawScreen():
-        screen.fill("Grey")
+        screen.fill(backgroundColor)
 
         title, titleRect = write("Welcome to Ultimate Tic Tac Toe!", 20, 20, "Black")
         screen.blit(title, titleRect)
@@ -146,8 +152,8 @@ def startUp():
         for i in range(5):
             r = pygame.Rect(165 + (150 * i), HEIGHT - 200, 150, 150)
             diffBoxes.append(r)
-            pygame.draw.rect(screen, "Grey", r, 0)
-            pygame.draw.rect(screen, (0, 0, 0), r, 2)
+            pygame.draw.rect(screen, backgroundColor, r, 0)
+            pygame.draw.rect(screen, gridColor, r, 2)
             numText, numRect = write(diffLabels[i], r.x + 65, r.y + 60, "Black")
             screen.blit(numText, numRect)
 
@@ -157,8 +163,8 @@ def startUp():
         for i, token in enumerate(["X", "O"]):
             r = pygame.Rect(400 + i * 160, 150, 120, 120)
             tokenBoxes.append(r)
-            pygame.draw.rect(screen, "Grey", r, 0)
-            pygame.draw.rect(screen, (0, 0, 0), r, 2)
+            pygame.draw.rect(screen, backgroundColor, r, 0)
+            pygame.draw.rect(screen, gridColor, r, 2)
             t, tr = write(token, r.x + 48, r.y + 45, "Black")
             screen.blit(t, tr)
 
@@ -180,9 +186,9 @@ def startUp():
                     if rect.x < mouseX < rect.x + rect.width and rect.y < mouseY < rect.y + rect.height:
                         chosenDifficulty = i + 1
                         for j, r in enumerate(diffBoxes):
-                            boxColor = (255, 30, 30) if j == i else "Grey"
+                            boxColor = (255, 30, 30) if j == i else backgroundColor
                             pygame.draw.rect(screen, boxColor, r, 0)
-                            pygame.draw.rect(screen, (0, 0, 0), r, 2)
+                            pygame.draw.rect(screen, gridColor, r, 2)
                             numText, numRect = write(diffLabels[j], r.x + 65, r.y + 60, "Black")
                             screen.blit(numText, numRect)
                         print(f"Difficulty: {chosenDifficulty}")
@@ -192,9 +198,9 @@ def startUp():
                     if rect.x < mouseX < rect.x + rect.width and rect.y < mouseY < rect.y + rect.height:
                         chosenToken = token
                         for j, r in enumerate(tokenBoxes):
-                            boxColor = (255, 30, 30) if j == i else "Grey"
+                            boxColor = (255, 30, 30) if j == i else backgroundColor
                             pygame.draw.rect(screen, boxColor, r, 0)
-                            pygame.draw.rect(screen, (0, 0, 0), r, 2)
+                            pygame.draw.rect(screen, gridColor, r, 2)
                             t, tr = write(["X", "O"][j], r.x + 48, r.y + 45, "Black")
                             screen.blit(t, tr)
                         print(f"Token: {chosenToken}")
@@ -216,16 +222,16 @@ def write(text, x, y, color):
 def drawBoard():
     for i in range(3):
         for j in range(3):
-            pygame.draw.rect(screen, (0, 0, 0), (i * MAX_SIZE + SPREAD, j * MAX_SIZE + SPREAD, MAX_SIZE, MAX_SIZE), 2)
+            pygame.draw.rect(screen, gridColor, (i * MAX_SIZE + SPREAD, j * MAX_SIZE + SPREAD, MAX_SIZE, MAX_SIZE), 2)
 
 
 def drawX(cx, cy):
-    pygame.draw.line(screen, (255, 0, 0), (cx - 20, cy - 20), (cx + 20, cy + 20), width=3)
-    pygame.draw.line(screen, (255, 0, 0), (cx - 20, cy + 20), (cx + 20, cy - 20), width=3)
+    pygame.draw.line(screen, xColor, (cx - 20, cy - 20), (cx + 20, cy + 20), width=3)
+    pygame.draw.line(screen, xColor, (cx - 20, cy + 20), (cx + 20, cy - 20), width=3)
 
 
 def drawO(cx, cy):
-    pygame.draw.circle(screen, (0, 0, 255), (cx, cy), 20, width=3)
+    pygame.draw.circle(screen, oColor, (cx, cy), 20, width=3)
 
 
 def drawBigX(bigNum):
@@ -233,8 +239,8 @@ def drawBigX(bigNum):
     bigCol = (bigNum - 1) % 3
     cx = SPREAD + bigCol * MAX_SIZE + MAX_SIZE // 2
     cy = SPREAD + bigRow * MAX_SIZE + MAX_SIZE // 2
-    pygame.draw.line(screen, (255, 0, 0), (cx - 60, cy - 60), (cx + 60, cy + 60), width=4)
-    pygame.draw.line(screen, (255, 0, 0), (cx - 60, cy + 60), (cx + 60, cy - 60), width=4)
+    pygame.draw.line(screen, xColor, (cx - 60, cy - 60), (cx + 60, cy + 60), width=4)
+    pygame.draw.line(screen, xColor, (cx - 60, cy + 60), (cx + 60, cy - 60), width=4)
     
     
 def drawBigO(bigNum):
@@ -242,21 +248,21 @@ def drawBigO(bigNum):
     bigCol = (bigNum - 1) % 3
     cx = SPREAD + bigCol * MAX_SIZE + MAX_SIZE // 2
     cy = SPREAD + bigRow * MAX_SIZE + MAX_SIZE // 2
-    pygame.draw.circle(screen, (0, 0, 255), (cx, cy), 60, width=4)
+    pygame.draw.circle(screen, oColor, (cx, cy), 60, width=4)
 
 
 def winningLine(lineType, index):
     if lineType == "row":
-        pygame.draw.line(screen, (0, 0, 0), (SPREAD + 10, SPREAD + index * MAX_SIZE + MAX_SIZE // 2), ((SPREAD + MAX_SIZE * 3) - 10, SPREAD + index * MAX_SIZE + MAX_SIZE // 2), width=8)
+        pygame.draw.line(screen, winningLineColor, (SPREAD + 10, SPREAD + index * MAX_SIZE + MAX_SIZE // 2), ((SPREAD + MAX_SIZE * 3) - 10, SPREAD + index * MAX_SIZE + MAX_SIZE // 2), width=8)
     
     elif lineType == "col":
-        pygame.draw.line(screen, (0, 0, 0), (SPREAD + index * MAX_SIZE + MAX_SIZE // 2, SPREAD + 10), (SPREAD + index * MAX_SIZE + MAX_SIZE // 2, SPREAD + MAX_SIZE * 3 - 10), width=8)
+        pygame.draw.line(screen, winningLineColor, (SPREAD + index * MAX_SIZE + MAX_SIZE // 2, SPREAD + 10), (SPREAD + index * MAX_SIZE + MAX_SIZE // 2, SPREAD + MAX_SIZE * 3 - 10), width=8)
     
     elif lineType == "diag":
         if index == 1:
-            pygame.draw.line(screen, (0, 0, 0), (SPREAD+10, SPREAD+10), ((SPREAD + MAX_SIZE * 3) - 10, (SPREAD + MAX_SIZE * 3) - 10), width=8)
+            pygame.draw.line(screen, winningLineColor, (SPREAD+10, SPREAD+10), ((SPREAD + MAX_SIZE * 3) - 10, (SPREAD + MAX_SIZE * 3) - 10), width=8)
         else:
-            pygame.draw.line(screen, (0, 0, 0), (SPREAD + MAX_SIZE * 3 - 10, SPREAD + 10), (SPREAD + 10, SPREAD + MAX_SIZE * 3 - 10), width=8)
+            pygame.draw.line(screen, winningLineColor, (SPREAD + MAX_SIZE * 3 - 10, SPREAD + 10), (SPREAD + 10, SPREAD + MAX_SIZE * 3 - 10), width=8)
             
     
     pygame.display.flip()
@@ -277,7 +283,7 @@ def drawSidePanel(currentBoardNum):
 
 
 def renderBoards(currentBoardNum):
-    screen.fill("Grey")
+    screen.fill(backgroundColor)
     drawSidePanel(currentBoardNum)
     drawBoard()
 
@@ -299,7 +305,7 @@ def renderBoards(currentBoardNum):
                 for col in range(3):
                     cellX = bigX + col * SMALL_SIZE
                     cellY = bigY + row * SMALL_SIZE
-                    pygame.draw.rect(screen, (0, 0, 0), (cellX, cellY, SMALL_SIZE, SMALL_SIZE), 1)
+                    pygame.draw.rect(screen, gridColor, (cellX, cellY, SMALL_SIZE, SMALL_SIZE), 1)
                     token = board.layout[row][col]
                     cx = cellX + SMALL_SIZE // 2
                     cy = cellY + SMALL_SIZE // 2
