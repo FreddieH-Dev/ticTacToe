@@ -614,8 +614,11 @@ if playerToken == "X":
     computerToken = "O"
 else:
     computerToken = "X"
-    
-currentPlayer = random.choice([playerToken, computerToken])
+
+if SEARCH_DEPTH == 5:
+    currentPlayer = playerToken
+else:
+    currentPlayer = random.choice([playerToken, computerToken])
 
 renderBoards(None)
 currentBoard, currentBoardNum = makeFirstMove(currentPlayer, playerToken, computerToken)
