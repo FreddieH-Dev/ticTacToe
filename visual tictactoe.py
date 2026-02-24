@@ -6,6 +6,7 @@ SEARCH_DEPTH = None
 gameWon = False
 running = True
 
+#https://www.pygame.org/docs/ref/color_list.html
 backgroundColor = "grey"
 xColor = "red"
 oColor = "blue"
