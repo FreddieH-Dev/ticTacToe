@@ -4,6 +4,7 @@ import time
 
 SEARCH_DEPTH = None
 gameWon = False
+running = True
 
 backgroundColor = "grey"
 xColor = "red"
@@ -20,11 +21,7 @@ SPREAD = (HEIGHT - (MAX_SIZE * 3)) // 2
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
-running = True
-
-pygame.font.init()
 fontObj = pygame.font.Font('freesansbold.ttf', 32)
-
 pygame.display.set_caption('Ultimate Tic Tac Toe')
 
 
